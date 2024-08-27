@@ -1,32 +1,58 @@
 import os
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, Enum
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy import create_engine
 from eralchemy2 import render_er
 
 Base = declarative_base()
 
-class Person(Base):
-    __tablename__ = 'person'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
-    id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
 
-class Address(Base):
-    __tablename__ = 'address'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
-    id = Column(Integer, primary_key=True)
-    street_name = Column(String(250))
-    street_number = Column(String(250))
-    post_code = Column(String(250), nullable=False)
-    person_id = Column(Integer, ForeignKey('person.id'))
-    person = relationship(Person)
+class Media(Base):
+    __tablename__ = "media"
 
-    def to_dict(self):
-        return {}
+    Id = Column(Integer, primary_key=True)
+    type = Column(Enum("Photo", "Video", name="type"))
+    url = Column(String(80))
+    post_id = Column(Integer, ForeignKey("post.Id"))
+
+
+
+class Post(Base):
+    __tablename__ = "post"
+
+    Id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.Id"))
+    medias = relationship("Media", backref = "post")
+    comments = relationship("Comment", backref = "post")
+
+class User(Base):
+    __tablename__ = "user"
+
+    Id = Column(Integer, primary_key=True)
+    username = Column(String(30))
+    firstname = Column(String(30))
+    lastname = Column(String(50))
+    email = Column(String(50))
+    posts = relationship("Post", backref = "User")
+    comments = relationship("Comment", backref = "user")
+    followers = relationship("Follower", foreign_keys="Follower.user_from_id", backref="user_from")
+    following = relationship("Follower", foreign_keys="Follower.user_to_id", backref="user_to")
+
+class Comment(Base):
+    __tablename__ = "comment"
+
+    Id = Column(Integer, primary_key=True)
+    comment_text = Column(String(100))
+    user_id = Column(Integer, ForeignKey("user.Id"))
+    post_id = Column(Integer, ForeignKey("post.Id"))
+
+class Follower(Base):
+    __tablename__ = "follower"
+
+    user_from_id = Column(Integer, ForeignKey("user.Id"), primary_key=True)
+    user_to_id = Column(Integer, ForeignKey("user.Id"), primary_key=True)
+
 
 ## Draw from SQLAlchemy base
 try:
